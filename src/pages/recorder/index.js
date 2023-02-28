@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 
-import "./index.css"
+import "./index.css";
 import speechToTextUtils from "../../utils/utility_transcribe";
 import { AudioWave } from "../../components/AudioWave/audioWave";
 import { saveAs } from "file-saver";
 import { bufferData, objBlob } from "../../utils/utility_transcribe";
-import { Button, Typography } from "antd";
+import { Button, Typography, Input, Select, Form } from "antd";
 
 const RecorderPage = () => {
   const [transcribedData, setTranscribedData] = useState([]);
@@ -80,9 +80,12 @@ const RecorderPage = () => {
   const handleDownloadFile = () => {
     const breakLine = [...transcribedData].map((item) => item + "\n");
     let blob = new Blob([...breakLine], { type: "text/plain;charset=utf-8" });
-    const url = window.URL.createObjectURL(blob);
     saveAs(blob, `${name}.txt`);
   };
+
+  const handleSaveMeeting = () => {
+    console.log("save");
+  }
 
   return (
     <div className="App">
@@ -92,7 +95,7 @@ const RecorderPage = () => {
           display: "flex",
           gap: "1rem",
           justifyContent: "flex-start",
-          margin: "5rem 10rem",
+          margin: "2rem 5rem",
           height: "100%",
         }}
       >
@@ -117,7 +120,7 @@ const RecorderPage = () => {
               onClick={onStart}
               disabled={isRecording}
             >
-              {isRecording ? "Đang ghi" : "Bắt đầu"}
+              {isRecording ? "Đang ghi" : "Bắt đầu ghi"}
             </Button>
             {isRecording && <AudioWave />}
             {/* {error && <span className='error'>{error}</span>} */}
@@ -159,21 +162,36 @@ const RecorderPage = () => {
             style={{
               border: "1px solid #dddddd",
               padding: "1rem",
-              display: "flex",
-              justifyContent: "flex-start",
-              alignItems: "center",
-              gap: "0.5rem",
               marginBottom: "1.5rem",
             }}
           >
-            {/* <input value={timeChunk} onChange={(e) => setTimeChunk(Number(e.target.value))} disabled/> */}
-            <span style={{ fontSize: "14px" }}>Tên file: </span>
-            <input
-              style={{ minWidth: "250px" }}
-              value={name}
-              placeholder="Nhập tên người nói"
-              onChange={(e) => setName(e.target.value)}
-            />
+            <Form autoComplete="off">
+              <Form.Item label="Tên file">
+                <Input
+                  placeholder="Tên file"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </Form.Item>
+              <Form.Item label="Chủ trì">
+                <Input placeholder="Người chủ trì" />
+              </Form.Item>
+              <Form.Item label="Thành phần">
+                <Select
+                  placeholder="Thành phần"
+                  mode="multiple"
+                  allowClear
+                  showSearch
+                  options={[
+                    { label: "A1", value: "A1" },
+                    { label: "A2", value: "A2" },
+                  ]}
+                />
+              </Form.Item>
+            </Form>
+            <div style={{textAlign: "right"}}>
+              <Button type="primary" onClick={handleSaveMeeting}>Lưu cuộc họp</Button>
+            </div>
           </div>
           <Typography.Title level={4}>Download file</Typography.Title>
           <div>
