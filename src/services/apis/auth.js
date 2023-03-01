@@ -14,7 +14,7 @@ const authApi = {
   },
   logout: () => {
     return request("/auth/v1/logout", {
-      method: "GET",
+      method: "POST",
     });
   },
   getCurrentUser: () => {

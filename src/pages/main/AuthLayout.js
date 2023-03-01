@@ -1,5 +1,5 @@
 import { useHookstate } from "@hookstate/core";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { Header } from "../../components/Header";
 import authApi from "../../services/apis/auth";
@@ -7,7 +7,7 @@ import store from "./store";
 
 export const AuthLayout = () => {
   const navigate = useNavigate();
-const authState = useHookstate(store);
+  const authState = useHookstate(store);
 
   useEffect(() => {
     handleCheckToken();
@@ -22,12 +22,16 @@ const authState = useHookstate(store);
         user: { ...res.data.result },
       });
     } catch (error) {
-      authState.isLogged.set(false);
+      authState.set({
+        isLogged: true,
+        user: null,
+      });
+    navigate("/login");
     }
   };
 
   if (!authState.isLogged.get()) {
-    return navigate("/login");
+    navigate("/login");
   }
 
   return (

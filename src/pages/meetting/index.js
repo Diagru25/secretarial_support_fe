@@ -1,48 +1,116 @@
-import { Table, Typography } from "antd";
-import React from "react";
-import {FilterTable} from "./components/FilterTable";
+import { useHookstate } from "@hookstate/core";
+import { Button, Table, Typography } from "antd";
+import { VerticalAlignBottomOutlined } from "@ant-design/icons";
+import React, { useEffect } from "react";
+import { FilterTable } from "./components/FilterTable";
+import meetingStore, { getAllMeeting } from "./store";
+import { saveAs } from "file-saver";
+import moment from "moment";
 
 export const MeetingPage = () => {
-    const dataSource = [
-      {
-        key: "1",
-        name: "Mike",
-        age: 32,
-        address: "10 Downing Street",
-      },
-      {
-        key: "2",
-        name: "John",
-        age: 42,
-        address: "10 Downing Street",
-      },
-    ];
+  const meetingState = useHookstate(meetingStore);
 
-    const columns = [
-      {
-        title: "Name",
-        dataIndex: "name",
-        key: "name",
-      },
-      {
-        title: "Age",
-        dataIndex: "age",
-        key: "age",
-      },
-      {
-        title: "Address",
-        dataIndex: "address",
-        key: "address",
-      },
-    ];
+  useEffect(() => {
+    getAllMeeting();
+  }, []);
 
-    return (
-      <div style={{ textAlign: "center" }}>
-        <Typography.Title>Danh sách cuộc họp</Typography.Title>
-        <div>
-            <FilterTable onFilter={() => {}}/>
-          <Table dataSource={dataSource} columns={columns} />
-        </div>
+  const handlePageChange = (page) => {
+    getAllMeeting({pageIndex: page})
+  }
+
+  const handleDownload = (url) => {
+    const arrSplit = url.split("/");
+    const fileName = arrSplit[arrSplit.length - 1];
+    saveAs(url, fileName);
+  };
+
+  const columns = [
+    {
+      title: "Cuộc họp",
+      dataIndex: "name",
+      key: "name",
+    },
+    {
+      title: "Chủ trì",
+      dataIndex: "preside",
+      key: "age",
+    },
+    {
+      title: "Thành phần",
+      dataIndex: "list_user",
+      key: "list_user",
+    },
+    {
+      title: "Ngày tạo",
+      dataIndex: "created_at",
+      key: "created_at",
+      render: (text) => <span>{moment(text).format("DD/MM/yyyy HH:mm")}</span>,
+    },
+    {
+      title: "Audio",
+      dataIndex: "url_audio",
+      key: "url_audio",
+      align: "center",
+      render: (text) => {
+        return (
+          <Button
+            type="link"
+            icon={<VerticalAlignBottomOutlined />}
+            onClick={() => handleDownload(text)}
+          >
+            Tải xuống
+          </Button>
+        );
+      },
+    },
+    {
+      title: "Văn bản",
+      dataIndex: "url_txt",
+      key: "url_txt",
+      align: "center",
+      render: (text) => {
+        return (
+          <Button
+            type="link"
+            icon={<VerticalAlignBottomOutlined />}
+            onClick={() => handleDownload(text)}
+          >
+            Tải xuống
+          </Button>
+        );
+      },
+    },
+    {
+      title: "Hành động",
+      key: "action",
+      align: "center",
+      render: (_, record) => {
+        return (
+          <Button type="link" danger>
+            Xóa
+          </Button>
+        );
+      },
+    },
+  ];
+
+  return (
+    <div style={{ textAlign: "center" }}>
+      <Typography.Title level={2}>Danh sách cuộc họp</Typography.Title>
+      <div>
+        <FilterTable onFilter={() => {}} />
+        <Table
+          size="small"
+          dataSource={meetingState.items.get()}
+          columns={columns}
+          pagination={{
+            pageSize: meetingState.pageSize.get(),
+            current: meetingState.pageIndex.get(),
+            total: meetingState.total.get(),
+            onChange: handlePageChange
+          }}
+        />
       </div>
-    );
-}
+    </div>
+  );
+};

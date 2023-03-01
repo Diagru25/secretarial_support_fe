@@ -1,13 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Menu, Button, Space, Typography } from "antd";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import store from "../../pages/main/store";
 import { useHookstate } from "@hookstate/core";
+import authApi from "../../services/apis/auth";
 
 export const Header = () => {
+    const location = useLocation();
   const navigate = useNavigate();
   const state = useHookstate(store);
   const [current, setCurrent] = useState("app");
+
   const items = [
     {
       label: <Link to="/">Trang chủ</Link>,
@@ -19,6 +22,11 @@ export const Header = () => {
     },
   ];
 
+  useEffect(() => {
+    if(location.pathname.includes("/meeting/list")) setCurrent("meeting");
+    else(setCurrent("app"))
+  }, [location.pathname])
+
   const onClick = (e) => {
     setCurrent(e.key);
   };
@@ -27,9 +35,9 @@ export const Header = () => {
     navigate("/login");
   };
 
-  const handleClickLogout = () => {
+  const handleClickLogout = async () => {
     try {
-      //call api logout
+      await authApi.logout();
       state.isLogged.set(false);
     } catch (ex) {
       return;

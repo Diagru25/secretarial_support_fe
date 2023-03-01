@@ -5,13 +5,22 @@ import speechToTextUtils from "../../utils/utility_transcribe";
 import { AudioWave } from "../../components/AudioWave/audioWave";
 import { saveAs } from "file-saver";
 import { bufferData, objBlob } from "../../utils/utility_transcribe";
-import { Button, Typography, Input, Select, Form } from "antd";
+import { Button, Typography, message } from "antd";
+import { UploadForm } from "./components/UploadForm";
+import uploadApi from "../../services/apis/upload";
+import meetingApi from "../../services/apis/meeting";
 
 const RecorderPage = () => {
   const [transcribedData, setTranscribedData] = useState([]);
   const [audio, setAudio] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
-  const [name, setName] = useState("Thư ký");
+  const [isSaving, setIsSaving] = useState(false);
+
+  const [uploadData, setUploadData] = useState({
+    name: "",
+    preside: "",
+    meeting_participants: [],
+  });
 
   const bottomRef = useRef(null);
 
@@ -21,8 +30,17 @@ const RecorderPage = () => {
 
   useEffect(() => {
     const d = new Date();
-    setName(`cuoc_hop_${d.getDate()}_${d.getMonth() + 1}_${d.getFullYear()}`);
+    setUploadData({
+      ...uploadData,
+      name: `cuoc_hop_${d.getDate()}_${
+        d.getMonth() + 1
+      }_${d.getFullYear()}_${d.getTime()}`,
+    });
   }, []);
+
+  const handleChangeUploadData = (data) => {
+    setUploadData({ ...uploadData, ...data });
+  };
 
   function handleDataReceived(data, isFinal) {
     const d = new Date();
@@ -62,17 +80,10 @@ const RecorderPage = () => {
   }
 
   function onStop() {
-    // console.log(bufferData);
-
-    // let blob = new Blob([...bufferData], { type: "audio/wav" });
-    // saveAs(blob, "audio.wav");
-    // const url = window.URL.createObjectURL(blob);
-    // setAudio(url);
-    // console.log(url);
     setIsRecording(false);
-    //flushInterimData() // A safety net if Google's Speech API doesn't work as expected, i.e. always sends the final result
+
     speechToTextUtils.stopRecording();
-    console.log(objBlob.blob);
+
     const url = window.URL.createObjectURL(objBlob.blob);
     setAudio(url);
   }
@@ -80,12 +91,61 @@ const RecorderPage = () => {
   const handleDownloadFile = () => {
     const breakLine = [...transcribedData].map((item) => item + "\n");
     let blob = new Blob([...breakLine], { type: "text/plain;charset=utf-8" });
-    saveAs(blob, `${name}.txt`);
+    saveAs(blob, `${uploadData.name}.txt`);
   };
 
-  const handleSaveMeeting = () => {
-    console.log("save");
-  }
+  const handleSaveMeeting = async (data) => {
+    try {
+      setIsSaving(true);
+      const breakLine = [...transcribedData].map((item) => item + "\n");
+      const blob = new Blob([...breakLine], {
+        type: "text/plain;charset=utf-8",
+      });
+      const fdText = new FormData();
+      fdText.append("file", blob, `${uploadData.name}.txt`);
+      const resText = await uploadApi.upload(fdText);
+      const urlText = resText.data.url;
+
+      const fdAudio = new FormData();
+      fdAudio.append("file", objBlob.blob, `${uploadData.name}.wav`);
+      uploadApi
+        .upload(fdAudio)
+        .then((res) => {
+          const urlAudio = res.data.url;
+          const newDataUpload = {
+            ...data,
+            url_audio: urlAudio,
+            url_txt: urlText,
+          };
+          meetingApi
+            .addMeeting(newDataUpload)
+            .then((res) => {
+              setIsSaving(false);
+              resetState();
+              message.success("Lưu cuộc họp mới thành công!");
+            })
+            .catch((err) => {
+              setIsSaving(false);
+              message.error("Lưu thông tin cuộc họp không thành công!");
+            });
+        })
+        .catch((err) => {
+          setIsSaving(false);
+          message.error("Lưu thông tin cuộc họp không thành công!");
+        });
+    } catch (ex) {
+      setIsSaving(false);
+      message.error("Lưu thông tin cuộc họp không thành công!");
+    }
+  };
+
+  const resetState = () => {
+    setUploadData({
+      name: "",
+      preside: "",
+      meeting_participants: [],
+    });
+  };
 
   return (
     <div className="App">
@@ -101,7 +161,7 @@ const RecorderPage = () => {
       >
         <div
           style={{
-            flex: 4,
+            flex: 1,
             textAlign: "left",
           }}
         >
@@ -155,69 +215,31 @@ const RecorderPage = () => {
         </div>
         <div
           style={{
-            flex: 3,
+            flex: 1,
           }}
         >
+          <UploadForm
+            onUpload={handleSaveMeeting}
+            uploadData={uploadData}
+            onChangeUploadData={handleChangeUploadData}
+            isSaving={isSaving || isRecording ? true : false}
+          />
+          <Typography.Title level={4}>Download file</Typography.Title>
           <div
             style={{
-              border: "1px solid #dddddd",
-              padding: "1rem",
-              marginBottom: "1.5rem",
+              display: "flex",
+              gap: "0.5rem",
+              alignItems: "center",
             }}
           >
-            <Form autoComplete="off">
-              <Form.Item label="Tên file">
-                <Input
-                  placeholder="Tên file"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-              </Form.Item>
-              <Form.Item label="Chủ trì">
-                <Input placeholder="Người chủ trì" />
-              </Form.Item>
-              <Form.Item label="Thành phần">
-                <Select
-                  placeholder="Thành phần"
-                  mode="multiple"
-                  allowClear
-                  showSearch
-                  options={[
-                    { label: "A1", value: "A1" },
-                    { label: "A2", value: "A2" },
-                  ]}
-                />
-              </Form.Item>
-            </Form>
-            <div style={{textAlign: "right"}}>
-              <Button type="primary" onClick={handleSaveMeeting}>Lưu cuộc họp</Button>
+            <div style={{ flex: 1 }}>
+              {audio && <audio src={audio} controls />}
             </div>
-          </div>
-          <Typography.Title level={4}>Download file</Typography.Title>
-          <div>
-            <table>
-              <thead>
-                <tr>
-                  <th>Audio</th>
-                  <th>File txt</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>{audio && <audio src={audio} controls />}</td>
-                  <td>
-                    {
-                      <span
-                        className="download-text"
-                        onClick={handleDownloadFile}
-                      >
-                        {name && `${name}.txt`}
-                      </span>
-                    }
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <div style={{ flex: 1 }}>
+              <span className="download-text" onClick={handleDownloadFile}>
+                {(uploadData.name && transcribedData.length > 0) && `${uploadData.name}.txt`}
+              </span>
+            </div>
           </div>
         </div>
       </div>
