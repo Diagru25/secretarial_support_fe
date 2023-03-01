@@ -1,8 +1,12 @@
 import React, { useState } from "react";
-import { Menu } from "antd";
-import { Link } from "react-router-dom";
+import { Menu, Button, Space, Typography } from "antd";
+import { Link, useNavigate } from "react-router-dom";
+import store from "../../pages/main/store";
+import { useHookstate } from "@hookstate/core";
 
 export const Header = () => {
+  const navigate = useNavigate();
+  const state = useHookstate(store);
   const [current, setCurrent] = useState("app");
   const items = [
     {
@@ -17,6 +21,19 @@ export const Header = () => {
 
   const onClick = (e) => {
     setCurrent(e.key);
+  };
+
+  const handleClickLogin = () => {
+    navigate("/login");
+  };
+
+  const handleClickLogout = () => {
+    try {
+      //call api logout
+      state.isLogged.set(false);
+    } catch (ex) {
+      return;
+    }
   };
 
   return (
@@ -41,7 +58,18 @@ export const Header = () => {
         />
       </div>
       <div>
-        <Link to="/login" style={{textDecoration: "none"}}>Đăng nhập</Link>
+        {state.isLogged.get() ? (
+          <Space size="small">
+            <Typography.Text>{state.user.get().name}</Typography.Text>
+            <Button type="link" onClick={handleClickLogout}>
+              (Đăng xuất)
+            </Button>
+          </Space>
+        ) : (
+          <Button type="link" onClick={handleClickLogin}>
+            Đăng nhập
+          </Button>
+        )}
       </div>
     </div>
   );

@@ -13,22 +13,7 @@
   }
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
-.App-link {
-  color: #61dafb;
-}
-
-table {
+/* table {
   font-family: arial, sans-serif;
   border-collapse: collapse;
   width: 100%;
@@ -40,8 +25,7 @@ th {
   border: 1px solid #dddddd;
   text-align: center;
   padding: 8px;
-  /* width: 350px; */
-}
+} */
 
 input {
     padding: 6px 11px;
