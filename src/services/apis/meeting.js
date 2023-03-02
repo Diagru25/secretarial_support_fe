@@ -20,9 +20,20 @@ const meetingApi = {
   },
   getOne: (id) => {
     return request(`/home/v1/meetings/${id}`, {
-        method: "GET"
+      method: "GET",
     });
-  }
+  },
+  delete: (id) => {
+    return request(`/home/v1/meetings/${id}`, {
+      method: "DELETE",
+    });
+  },
+  update: (id, data) => {
+    return request(`/home/v1/meetings/${id}`, {
+      method: "PUT",
+      data,
+    });
+  },
 };
 
 export default meetingApi;

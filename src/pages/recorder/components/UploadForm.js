@@ -1,8 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { Button, Input, Select, Form } from "antd";
+import { Button, Input, Select, Form, Alert } from "antd";
+import { LoadingOutlined } from "@ant-design/icons";
 import meetingApi from "../../../services/apis/meeting";
 
-export const UploadForm = ({ onUpload, uploadData, onChangeUploadData, isSaving }) => {
+export const UploadForm = ({
+  onUpload,
+  uploadData,
+  onChangeUploadData,
+  isSaving,
+  isRecording,
+}) => {
   const [selectOption, setSelectOption] = useState([]);
 
   useEffect(() => {
@@ -34,6 +41,7 @@ export const UploadForm = ({ onUpload, uploadData, onChangeUploadData, isSaving 
     <div
       style={{
         border: "1px solid #dddddd",
+        borderRadius: "6px",
         padding: "1rem",
         marginBottom: "1.5rem",
       }}
@@ -68,8 +76,29 @@ export const UploadForm = ({ onUpload, uploadData, onChangeUploadData, isSaving 
           />
         </Form.Item>
       </Form>
-      <div style={{ textAlign: "right" }}>
-        <Button type="primary" onClick={handleSubmit} disabled={isSaving}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: isSaving ? "space-between" : "end",
+          alignItems: "center",
+        }}
+      >
+        {isSaving ? (
+          <Alert
+            message={
+              <span>
+                <LoadingOutlined style={{ marginRight: "0.5rem" }} /> Đang
+                upload bản ghi âm, vui lòng không reload (F5) lại trang.
+              </span>
+            }
+            type="warning"
+          />
+        ) : null}
+        <Button
+          type="primary"
+          onClick={handleSubmit}
+          disabled={isSaving || isRecording}
+        >
           Lưu cuộc họp
         </Button>
       </div>

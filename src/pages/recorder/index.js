@@ -4,11 +4,12 @@ import "./index.css";
 import speechToTextUtils from "../../utils/utility_transcribe";
 import { AudioWave } from "../../components/AudioWave/audioWave";
 import { saveAs } from "file-saver";
-import { bufferData, objBlob } from "../../utils/utility_transcribe";
+import { objBlob } from "../../utils/utility_transcribe";
 import { Button, Typography, message } from "antd";
 import { UploadForm } from "./components/UploadForm";
 import uploadApi from "../../services/apis/upload";
 import meetingApi from "../../services/apis/meeting";
+import moment from "moment";
 
 const RecorderPage = () => {
   const [transcribedData, setTranscribedData] = useState([]);
@@ -20,6 +21,8 @@ const RecorderPage = () => {
     name: "",
     preside: "",
     meeting_participants: [],
+    started_at: "",
+    end_at: ""
   });
 
   const bottomRef = useRef(null);
@@ -32,7 +35,7 @@ const RecorderPage = () => {
     const d = new Date();
     setUploadData({
       ...uploadData,
-      name: `cuoc_hop_${d.getDate()}_${
+      name: `cuộc họp ${d.getDate()}_${
         d.getMonth() + 1
       }_${d.getFullYear()}_${d.getTime()}`,
     });
@@ -46,10 +49,8 @@ const RecorderPage = () => {
     const d = new Date();
     const text = `[${d.toLocaleTimeString()}]: ${data}`;
     if (isFinal) {
-      //setInterimTranscribedData('')
       setTranscribedData((oldData) => [...oldData, text]);
     } else {
-      //setInterimTranscribedData(data)
       setTranscribedData((oldData) => [...oldData, text]);
     }
   }
@@ -67,6 +68,7 @@ const RecorderPage = () => {
   function onStart() {
     setTranscribedData([]);
     setIsRecording(true);
+    setUploadData({...uploadData, started_at: moment().valueOf()})
 
     speechToTextUtils.initRecording(
       getTranscriptionConfig(),
@@ -81,7 +83,7 @@ const RecorderPage = () => {
 
   function onStop() {
     setIsRecording(false);
-
+    setUploadData({...uploadData, end_at: moment().valueOf()})
     speechToTextUtils.stopRecording();
 
     const url = window.URL.createObjectURL(objBlob.blob);
@@ -144,6 +146,8 @@ const RecorderPage = () => {
       name: "",
       preside: "",
       meeting_participants: [],
+      started_at: "",
+      end_at: ""
     });
   };
 
@@ -168,6 +172,7 @@ const RecorderPage = () => {
           <div
             style={{
               border: "1px solid #dddddd",
+              borderRadius: "6px",
               padding: "1rem",
               display: "flex",
               justifyContent: "space-between",
@@ -176,18 +181,15 @@ const RecorderPage = () => {
           >
             <Button
               type="primary"
-              //className={`btn btn-start ${isRecording && "btn-disable"}`}
               onClick={onStart}
               disabled={isRecording}
             >
               {isRecording ? "Đang ghi" : "Bắt đầu ghi"}
             </Button>
             {isRecording && <AudioWave />}
-            {/* {error && <span className='error'>{error}</span>} */}
             <Button
               type="primary"
               danger
-              //className={`btn btn-stop ${!isRecording && "btn-disable"}`}
               onClick={onStop}
               disabled={!isRecording}
             >
@@ -198,6 +200,7 @@ const RecorderPage = () => {
           <div
             style={{
               border: "1px solid #dddddd",
+              borderRadius: "6px",
               padding: "0 1rem",
               maxHeight: "500px",
               overflowY: "auto",
@@ -222,7 +225,8 @@ const RecorderPage = () => {
             onUpload={handleSaveMeeting}
             uploadData={uploadData}
             onChangeUploadData={handleChangeUploadData}
-            isSaving={isSaving || isRecording ? true : false}
+            isSaving={isSaving}
+            isRecording={isRecording}
           />
           <Typography.Title level={4}>Download file</Typography.Title>
           <div
